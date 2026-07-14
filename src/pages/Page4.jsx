@@ -52,6 +52,25 @@ function Page4({ name, onGiveUp }) {
     })
   }
 
+  const dodgeTouch = (event) => {
+    if (event.pointerType === 'mouse') return
+
+    event.preventDefault()
+
+    const button = meetButtonRef.current
+    const card = button?.closest('.apology-card')
+    if (!button || !card) return
+
+    const buttonRect = button.getBoundingClientRect()
+    const cardRect = card.getBoundingClientRect()
+    const maxX = Math.max(44, Math.min(104, (cardRect.width - buttonRect.width) / 2 - 9))
+
+    setMeetButtonOffset((current) => ({
+      x: current.x >= 0 ? -maxX : maxX,
+      y: current.y >= 0 ? -48 : 34,
+    }))
+  }
+
   const selectGiveUp = () => {
     setChoice('give-up')
     onGiveUp()
@@ -89,6 +108,7 @@ function Page4({ name, onGiveUp }) {
               '--dodge-x': `${meetButtonOffset.x}px`,
               '--dodge-y': `${meetButtonOffset.y}px`,
             }}
+            onPointerDown={dodgeTouch}
           >
             그래도 만날게
           </button>
