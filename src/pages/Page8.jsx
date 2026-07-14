@@ -1,15 +1,42 @@
 import { RotateCcw } from 'lucide-react'
+import { getKoreanVocative } from '../utils/korean'
 
 function formatDate(date, separator = '.') {
   return date.split('-').join(separator)
 }
 
-function Page8({ place, date, onRestart }) {
+function createPngFile(dataUrl, fileName) {
+  const base64 = dataUrl.split(',')[1]
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+
+  return new File([bytes], fileName, { type: 'image/png' })
+}
+
+function downloadImage(dataUrl, fileName, file) {
+  const link = document.createElement('a')
+  link.download = fileName
+  link.href = dataUrl
+  document.body.append(link)
+  link.click()
+  link.remove()
+
+  if (navigator.maxTouchPoints > 0 && !navigator.share) {
+    const imageUrl = URL.createObjectURL(file)
+    window.open(imageUrl, '_blank')
+    window.setTimeout(() => URL.revokeObjectURL(imageUrl), 60000)
+  }
+}
+
+function Page8({ name, place, date, onRestart }) {
   const displayDate = formatDate(date)
+  const vocativeName = getKoreanVocative(name)
 
-  const saveAsImage = async () => {
-    await document.fonts.load('64px Memoment')
-
+  const saveAsImage = () => {
     const canvas = document.createElement('canvas')
     canvas.width = 1080
     canvas.height = 1350
@@ -30,7 +57,7 @@ function Page8({ place, date, onRestart }) {
     context.fillStyle = '#1a2635'
     context.font = '64px Memoment, sans-serif'
     context.fillText('비 오니까 오늘은 말고', 540, 320)
-    context.fillText('이때는 진짜 만나자!', 540, 410)
+    context.fillText(`이때는 진짜 만나자 ${vocativeName}!`, 540, 410)
 
     context.strokeStyle = '#cedcea'
     context.lineWidth = 6
@@ -51,10 +78,25 @@ function Page8({ place, date, onRestart }) {
     context.font = '42px Memoment, sans-serif'
     context.fillText('우리 이날 꼭 만나기 ♡', 540, 995)
 
-    const link = document.createElement('a')
-    link.download = `우리의-약속-${date}.png`
-    link.href = canvas.toDataURL('image/png')
-    link.click()
+    const fileName = `우리의-약속-${date}.png`
+    const dataUrl = canvas.toDataURL('image/png')
+    const imageFile = createPngFile(dataUrl, fileName)
+    const shareData = {
+      files: [imageFile],
+      title: '우리의 약속',
+      text: `${displayDate} ${place}에서 만나기`,
+    }
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      navigator.share(shareData).catch((error) => {
+        if (error.name !== 'AbortError') {
+          downloadImage(dataUrl, fileName, imageFile)
+        }
+      })
+      return
+    }
+
+    downloadImage(dataUrl, fileName, imageFile)
   }
 
   return (
@@ -67,7 +109,7 @@ function Page8({ place, date, onRestart }) {
           <h1 id="result-title">
             비 오니까 오늘은 말고
             <br />
-            이때는 진짜 만나자!
+            이때는 진짜 만나자 {vocativeName}!
           </h1>
 
           <dl className="plan-summary">

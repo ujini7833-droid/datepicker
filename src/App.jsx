@@ -75,6 +75,7 @@ function App() {
   if (page === 8) {
     return (
       <Page8
+        name={name.trim()}
         place={place}
         date={date}
         onRestart={() => setPage(2)}

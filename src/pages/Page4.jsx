@@ -5,7 +5,45 @@ function Page4({ name, onGiveUp }) {
   const [choice, setChoice] = useState('')
   const [meetButtonOffset, setMeetButtonOffset] = useState({ x: 0, y: 0 })
   const meetButtonRef = useRef(null)
+  const meetButtonOriginRef = useRef(null)
   const vocativeName = getKoreanVocative(name)
+
+  const findFarthestPosition = (pointerX, pointerY, pageRect, buttonRect) => {
+    if (!meetButtonOriginRef.current) {
+      meetButtonOriginRef.current = {
+        x: buttonRect.left + buttonRect.width / 2 - meetButtonOffset.x,
+        y: buttonRect.top + buttonRect.height / 2 - meetButtonOffset.y,
+      }
+    }
+
+    const origin = meetButtonOriginRef.current
+    const edgeGap = 34
+    const halfWidth = buttonRect.width / 2
+    const halfHeight = buttonRect.height / 2
+    const left = pageRect.left + edgeGap + halfWidth
+    const right = pageRect.right - edgeGap - halfWidth
+    const top = pageRect.top + edgeGap + halfHeight
+    const bottom = pageRect.bottom - edgeGap - halfHeight
+    const middleY = pageRect.top + pageRect.height / 2
+    const targetPoints = [
+      { x: left, y: top },
+      { x: right, y: top },
+      { x: left, y: bottom },
+      { x: right, y: bottom },
+      { x: left, y: middleY },
+      { x: right, y: middleY },
+    ]
+
+    const farthestPoint = targetPoints.reduce((farthest, point) => {
+      const distance = (point.x - pointerX) ** 2 + (point.y - pointerY) ** 2
+      return distance > farthest.distance ? { ...point, distance } : farthest
+    }, { x: left, y: top, distance: -1 })
+
+    return {
+      x: farthestPoint.x - origin.x,
+      y: farthestPoint.y - origin.y,
+    }
+  }
 
   const keepMeetButtonAway = (event) => {
     if (event.pointerType !== 'mouse') return
@@ -14,7 +52,7 @@ function Page4({ name, onGiveUp }) {
     if (!button) return
 
     const buttonRect = button.getBoundingClientRect()
-    const cardRect = event.currentTarget.getBoundingClientRect()
+    const pageRect = event.currentTarget.getBoundingClientRect()
     const safeDistanceX = 82
     const safeDistanceY = 68
     const isCursorNear =
@@ -25,23 +63,12 @@ function Page4({ name, onGiveUp }) {
 
     if (!isCursorNear) return
 
-    const maxX = Math.max(44, Math.min(104, (cardRect.width - buttonRect.width) / 2 - 9))
-    const originalCenterX = buttonRect.left + buttonRect.width / 2 - meetButtonOffset.x
-    const originalCenterY = buttonRect.top + buttonRect.height / 2 - meetButtonOffset.y
-    const candidates = [
-      { x: -maxX, y: -48 },
-      { x: maxX, y: -48 },
-      { x: -maxX, y: 34 },
-      { x: maxX, y: 34 },
-    ]
-
-    const farthestPosition = candidates.reduce((farthest, candidate) => {
-      const candidateX = originalCenterX + candidate.x
-      const candidateY = originalCenterY + candidate.y
-      const distance = (candidateX - event.clientX) ** 2 + (candidateY - event.clientY) ** 2
-
-      return distance > farthest.distance ? { ...candidate, distance } : farthest
-    }, { x: 0, y: 0, distance: -1 })
+    const farthestPosition = findFarthestPosition(
+      event.clientX,
+      event.clientY,
+      pageRect,
+      buttonRect,
+    )
 
     setMeetButtonOffset((current) => {
       if (current.x === farthestPosition.x && current.y === farthestPosition.y) {
@@ -58,17 +85,14 @@ function Page4({ name, onGiveUp }) {
     event.preventDefault()
 
     const button = meetButtonRef.current
-    const card = button?.closest('.apology-card')
-    if (!button || !card) return
+    const page = button?.closest('.page-four')
+    if (!button || !page) return
 
     const buttonRect = button.getBoundingClientRect()
-    const cardRect = card.getBoundingClientRect()
-    const maxX = Math.max(44, Math.min(104, (cardRect.width - buttonRect.width) / 2 - 9))
-
-    setMeetButtonOffset((current) => ({
-      x: current.x >= 0 ? -maxX : maxX,
-      y: current.y >= 0 ? -48 : 34,
-    }))
+    const pageRect = page.getBoundingClientRect()
+    setMeetButtonOffset(
+      findFarthestPosition(event.clientX, event.clientY, pageRect, buttonRect),
+    )
   }
 
   const selectGiveUp = () => {
@@ -77,14 +101,13 @@ function Page4({ name, onGiveUp }) {
   }
 
   return (
-    <main className="page page-four">
+    <main className="page page-four" onPointerMove={keepMeetButtonAway}>
       <div className="apology-cloud apology-cloud-one" aria-hidden="true" />
       <div className="apology-cloud apology-cloud-two" aria-hidden="true" />
 
       <section
         className="apology-card"
         aria-labelledby="apology-title"
-        onPointerMove={keepMeetButtonAway}
       >
         <div className="sad-face" aria-hidden="true">
           <span>·</span>
