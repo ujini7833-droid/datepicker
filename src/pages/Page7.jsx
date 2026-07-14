@@ -1,20 +1,42 @@
 import { useState } from 'react'
+import { CalendarDays } from 'lucide-react'
+
+function getTodayString() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
 
 function Page7({ place, onNext }) {
   const [date, setDate] = useState('')
-  const [showError, setShowError] = useState(false)
+  const [dateError, setDateError] = useState('')
   const [isConfirmed, setIsConfirmed] = useState(false)
   const [year = '', month = '', day = ''] = date.split('-')
 
   const changeDate = (event) => {
-    setDate(event.target.value)
-    setShowError(false)
+    const selectedDate = event.target.value
+    setDate(selectedDate)
     setIsConfirmed(false)
+
+    if (selectedDate && selectedDate < getTodayString()) {
+      setDateError('오늘보다 이전 날짜야! 다시 골라줘.')
+      return
+    }
+
+    setDateError('')
   }
 
   const confirmDate = () => {
     if (!date) {
-      setShowError(true)
+      setDateError('날짜를 먼저 골라줘!')
+      return
+    }
+
+    if (date < getTodayString()) {
+      setDateError('오늘보다 이전 날짜야! 다시 골라줘.')
       return
     }
 
@@ -36,13 +58,21 @@ function Page7({ place, onNext }) {
 
         <label className="calendar-picker">
           <span>달력에서 날짜 고르기</span>
-          <input
-            type="date"
-            value={date}
-            onChange={changeDate}
-            aria-describedby="date-error"
-            aria-invalid={showError}
-          />
+          <span className="date-input-wrap">
+            <input
+              type="date"
+              value={date}
+              onChange={changeDate}
+              aria-describedby="date-error"
+              aria-invalid={Boolean(dateError)}
+            />
+            <CalendarDays
+              className="date-picker-icon"
+              size={21}
+              strokeWidth={2.2}
+              aria-hidden="true"
+            />
+          </span>
         </label>
 
         <div className="date-parts" aria-label={date ? `${year}년 ${month}월 ${day}일` : '선택한 날짜 없음'}>
@@ -60,8 +90,8 @@ function Page7({ place, onNext }) {
           </div>
         </div>
 
-        <p id="date-error" className={`date-error ${showError ? 'is-visible' : ''}`} role="alert">
-          날짜를 먼저 골라줘!
+        <p id="date-error" className={`date-error ${dateError ? 'is-visible' : ''}`} role="alert">
+          {dateError || '날짜를 먼저 골라줘!'}
         </p>
       </section>
 
