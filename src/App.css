@@ -1422,8 +1422,12 @@
 }
 
 .restart-home-button {
+  display: inline-flex;
   min-width: 126px;
   padding: 9px 20px 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   cursor: pointer;
   color: #667b55;
   font-size: 20px;

@@ -1,3 +1,5 @@
+import { RotateCcw } from 'lucide-react'
+
 function formatDate(date, separator = '.') {
   return date.split('-').join(separator)
 }
@@ -85,7 +87,7 @@ function Page8({ place, date, onRestart }) {
         </article>
 
         <button className="restart-home-button" type="button" onClick={onRestart}>
-          <span aria-hidden="true">↩ </span>
+          <RotateCcw size={19} strokeWidth={2.4} aria-hidden="true" />
           처음으로
         </button>
       </section>
